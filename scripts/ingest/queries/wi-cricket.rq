@@ -1,0 +1,11 @@
+# West Indies cricket caps with birthplace, so each capped player is attributed
+# to their home pool island (Tier 2). WI is multinational, so unlike a football
+# national team it cannot attribute to a single island — it resolves per player
+# via birthplace, the same two-path resolution the league query uses.
+SELECT ?player ?playerLabel ?countryDirect ?adminArea WHERE {
+  ?player wdt:P54 wd:{{TEAM_QID}} .
+  ?player wdt:P19 ?pob .
+  OPTIONAL { ?pob wdt:P17 ?countryDirect . }
+  OPTIONAL { ?pob wdt:P131* ?adminArea . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
+}

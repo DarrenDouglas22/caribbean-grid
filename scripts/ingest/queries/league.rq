@@ -1,0 +1,19 @@
+# Grouped roster query for one league, parameterized by {{LEAGUE_QID}}.
+# Returns each player who has a team-membership (P54) whose team's league
+# (P118) is the target league, with their birthplace country resolved two ways:
+#   ?countryDirect  — birthplace's P17 country (sovereign islands)
+#   ?adminArea      — every P131* administrative area (catches non-sovereign
+#                     territories like Puerto Rico whose P17 is the US)
+# The transform maps whichever resolves to a pool island; see wikidata-transform.
+SELECT ?player ?playerLabel ?altLabel ?countryDirect ?adminArea WHERE {
+  ?player wdt:P54 ?team .
+  ?team wdt:P118 wd:{{LEAGUE_QID}} .
+  ?player wdt:P19 ?pob .
+  OPTIONAL { ?pob wdt:P17 ?countryDirect . }
+  OPTIONAL { ?pob wdt:P131* ?adminArea . }
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en" .
+    ?player rdfs:label ?playerLabel .
+    ?player skos:altLabel ?altLabel .
+  }
+}

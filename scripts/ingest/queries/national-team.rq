@@ -1,0 +1,10 @@
+# Tier 2 senior national-team appearance, parameterized by {{TEAM_QID}} and the
+# island {{ISLAND_CODE}} the team represents. Covers West Indies cricket caps
+# and each island's senior football national team. A P54 membership in the
+# national team yields Tier 2 eligibility for that island regardless of
+# birthplace -- this is what makes England-born island internationals in the EPL
+# answerable under the displayed Tier 2 rule.
+SELECT ?player ?playerLabel WHERE {
+  ?player wdt:P54 wd:{{TEAM_QID}} .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
+}
