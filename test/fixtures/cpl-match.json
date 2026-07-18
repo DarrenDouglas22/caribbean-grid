@@ -1,0 +1,19 @@
+{
+  "meta": { "data_version": "0.11" },
+  "info": {
+    "event": { "name": "Caribbean Premier League" },
+    "teams": ["Trinbago Knight Riders", "Barbados Royals"],
+    "players": {
+      "Trinbago Knight Riders": ["Kieron Pollard", "Colin Munro"],
+      "Barbados Royals": ["Jason Holder", "Rahkeem Cornwall"]
+    },
+    "registry": {
+      "people": {
+        "Kieron Pollard": "cs-pollard",
+        "Colin Munro": "cs-munro",
+        "Jason Holder": "cs-holder",
+        "Rahkeem Cornwall": "cs-cornwall"
+      }
+    }
+  }
+}
