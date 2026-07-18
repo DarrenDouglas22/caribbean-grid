@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Secret-scanning pre-commit hook (KTD3). Blocks a commit that would leak the
+# Supabase service key or a service-role JWT. Install with:
+#   git config core.hooksPath scripts/hooks
+set -euo pipefail
+
+# Never allow a .env file to be committed.
+if git diff --cached --name-only | grep -qE '(^|/)\.env$'; then
+  echo "pre-commit: refusing to commit a .env file (it holds secrets)." >&2
+  exit 1
+fi
+
+# Scan the staged diff for a service key assignment or a service_role JWT.
+staged=$(git diff --cached -U0 --no-color || true)
+
+if printf '%s' "$staged" | grep -qE 'SUPABASE_SERVICE_KEY[[:space:]]*=[[:space:]]*[A-Za-z0-9._-]{20,}'; then
+  echo "pre-commit: a SUPABASE_SERVICE_KEY value appears in the diff. Remove it (use .env)." >&2
+  exit 1
+fi
+
+# Supabase service-role JWTs contain the claim "role":"service_role" (base64).
+if printf '%s' "$staged" | grep -qE 'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'; then
+  if printf '%s' "$staged" | grep -qiE 'service_role|c2VydmljZV9yb2xl'; then
+    echo "pre-commit: a service_role JWT appears in the diff. Do not commit service keys." >&2
+    exit 1
+  fi
+fi
+
+exit 0
