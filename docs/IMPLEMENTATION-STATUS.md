@@ -5,6 +5,17 @@ what was built and verified versus what is **infrastructure- or owner-gated**
 and cannot be completed in a sandbox without a provisioned Supabase project, the
 Supabase CLI/Docker, a GitHub repo with Pages, a device, or owner curation.
 
+## Architecture change: Neon + serverless (owner-chosen)
+
+The plan specified Supabase (KTD2). The owner chose a **Neon Postgres + serverless
+API** backend instead (free-tier friendly, no Supabase project needed). The SQL
+migrations are unchanged — only the transport moved from Supabase's PostgREST/RLS
+to explicit serverless endpoints under `api/` (`get-puzzle`, `search-players`,
+`check-guess`, `record-event`). Answers still never reach the browser (only those
+four operations are exposed, none returns the answer corpus). The Supabase client
+code was removed; the frontend bundle dropped from 231 KB to 16 KB. Deploy target
+is Vercel (`vercel.json`) + Neon.
+
 ## Environment
 
 The build ran with Node 25, npm, and git available — but **no Supabase CLI, no

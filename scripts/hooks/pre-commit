@@ -10,18 +10,19 @@ if git diff --cached --name-only | grep -qE '(^|/)\.env$'; then
   exit 1
 fi
 
-# Scan the staged diff for a service key assignment or a service_role JWT.
-staged=$(git diff --cached -U0 --no-color || true)
+# Scan only ADDED lines of the staged diff (a secret being removed is fine).
+added=$(git diff --cached -U0 --no-color | grep '^+' | grep -v '^+++' || true)
 
-if printf '%s' "$staged" | grep -qE 'SUPABASE_SERVICE_KEY[[:space:]]*=[[:space:]]*[A-Za-z0-9._-]{20,}'; then
-  echo "pre-commit: a SUPABASE_SERVICE_KEY value appears in the diff. Remove it (use .env)." >&2
+# A service-key or generic DB connection string with an inline credential.
+if printf '%s' "$added" | grep -qE '(SUPABASE_SERVICE_KEY|SERVICE_ROLE_KEY)[[:space:]]*=[[:space:]]*[A-Za-z0-9._-]{20,}'; then
+  echo "pre-commit: a service key value appears in an added line. Remove it (use .env)." >&2
   exit 1
 fi
 
-# Supabase service-role JWTs contain the claim "role":"service_role" (base64).
-if printf '%s' "$staged" | grep -qE 'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'; then
-  if printf '%s' "$staged" | grep -qiE 'service_role|c2VydmljZV9yb2xl'; then
-    echo "pre-commit: a service_role JWT appears in the diff. Do not commit service keys." >&2
+# Service-role JWTs contain the claim "role":"service_role" (base64).
+if printf '%s' "$added" | grep -qE 'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'; then
+  if printf '%s' "$added" | grep -qiE 'service_role|c2VydmljZV9yb2xl'; then
+    echo "pre-commit: a service_role JWT appears in an added line. Do not commit service keys." >&2
     exit 1
   fi
 fi

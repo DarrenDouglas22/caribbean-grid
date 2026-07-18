@@ -10,8 +10,17 @@ audience engine.
 - **Eligibility tiers:** born there (T1), senior national-team cap (T2),
   heritage — parent/grandparent born there (T3, hand-verified).
 
-Mobile-first vanilla-JS SPA (Vite) on GitHub Pages; Supabase Postgres backend
-with all answer data behind security-definer RPCs and RLS.
+Mobile-first vanilla-JS SPA (Vite). Backend is **Neon Postgres + a small
+serverless API** (Vercel functions): the four operations — `get-puzzle`,
+`search-players`, `check-guess`, `record-event` — are the only surface the
+browser can reach, and none returns the answer corpus, so answers stay
+server-side. Without a backend the app runs in **demo mode** (a bundled sample
+grid) so it is always previewable.
+
+> **Architecture note:** the plan originally specified Supabase (KTD2). Per the
+> owner's choice, the backend is Neon + serverless functions instead. The SQL
+> migrations are unchanged (standard Postgres); only the transport moved from
+> Supabase's PostgREST/RLS to explicit serverless endpoints.
 
 ## Privacy
 
@@ -25,13 +34,13 @@ no IP or user-agent stored with analytics.
 
 ```bash
 npm install
-cp .env.example .env      # fill in your Supabase URL + anon key
-npm run dev               # Vite dev server
-npm test                  # unit suites (no DB needed)
+cp .env.example .env      # fill in DATABASE_URL (Neon) once you have one
+npm run dev               # Vite dev server (demo mode until VITE_API_URL is set)
+npm test                  # all suites, incl. real-Postgres tests via PGlite (no Docker)
 ```
 
-Install the secret-scanning pre-commit hook once (blocks committing the service
-key or a `.env`):
+Install the secret-scanning pre-commit hook once (blocks committing secrets or a
+`.env`):
 
 ```bash
 git config core.hooksPath scripts/hooks
@@ -39,35 +48,54 @@ git config core.hooksPath scripts/hooks
 
 ## Database
 
-Requires the [Supabase CLI](https://supabase.com/docs/guides/cli) and Docker.
+Standard Postgres. The migrations under `supabase/migrations/` (named for
+history; portable to any Postgres) apply to Neon via the one-command applier:
 
 ```bash
-supabase start           # local Postgres + PostgREST
-supabase db reset        # apply migrations in supabase/migrations/
+DATABASE_URL=postgres://... npm run deploy:migrate
 ```
 
 Migrations, in order:
 
 1. `0001_schema.sql` — tables + invariant constraints.
-2. `0002_api.sql` — RPCs (`get_puzzle`, `search_players`, `check_guess`,
-   `record_event`), RLS deny-by-default, per-IP throttle.
+2. `0002_api.sql` — SQL functions (`get_puzzle`, `search_players`,
+   `check_guess`, `record_event`), RLS deny-by-default, per-IP throttle.
 3. `0003_analytics.sql` — D1/D7 return views.
 
-Integration tests run against the local stack and self-skip without it:
+The migrations, functions, RLS, and analytics views are verified in the test
+suite against real Postgres (PGlite, in-process — no Docker). Just run
+`npm test`.
 
-```bash
-supabase start && supabase db reset
-SUPABASE_URL=http://127.0.0.1:54321 \
-SUPABASE_SERVICE_KEY=<service-key> SUPABASE_ANON_KEY=<anon-key> \
-npm run test:integration
-```
+---
+
+## Deploy (Neon + Vercel)
+
+1. **Create a free Neon project** → copy the `DATABASE_URL` from Connection
+   Details.
+2. **Set up the schema and data locally** (put `DATABASE_URL` in `.env` first):
+
+   ```bash
+   npm run deploy:migrate                                   # apply migrations
+   npm run ingest:wikidata && npm run ingest:heritage       # load players + eligibility
+   npm run compose -- --validate                            # expect >=30 valid grids
+   npm run compose -- --days 14 --seed 42                   # fill 2 weeks of puzzles
+   ```
+
+   (CPL is optional — see the runbook for the Cricsheet download.)
+3. **Deploy to Vercel:** import the GitHub repo in Vercel and set the
+   `DATABASE_URL` environment variable (the same Neon string). `vercel.json`
+   already sets `VITE_API_URL=/api` and `BASE_PATH=/` for the build, and serves
+   the `api/*.js` functions. The Vercel URL is the live game.
+
+**Preview with no backend:** the app is playable in demo mode on any static host
+(e.g. GitHub Pages) with no database — useful for UX review.
 
 ---
 
 ## Operating cadence (runbook)
 
-All ingest/compose scripts run **locally** with the **service key** in `.env`
-(never deployed, never committed — KTD3).
+All ingest/compose scripts run **locally** with `DATABASE_URL` in `.env` (never
+deployed, never committed).
 
 ### 1. Ingest (weekly-ish)
 
@@ -111,13 +139,12 @@ dates.
 verified against a citable source **before it ships** — see `data/README.md`.
 The launch gate is **≥30 owner-verified entries** concentrated on the otherwise
 dead cells (Haiti×MLB, DR×NFL, WNBA columns, Jamaica×NBA).
-
-> No new scripts or tooling for curation — the runbook is README prose only.
-> Automated curator tooling is deferred per the Product Contract.
+`data/heritage-candidates-wikidata.csv` holds a machine-derived verification
+queue to work from.
 
 ### 4. Read the metrics
 
-Query the D1/D7 return views (the north-star metric) with the service key:
+Query the D1/D7 return views (the north-star metric):
 
 ```sql
 select * from d1_return order by cohort_date desc;
@@ -127,29 +154,9 @@ select * from daily_funnel order by puzzle_date desc;
 
 ---
 
-## Deploy
-
-- **Frontend:** GitHub Actions (`.github/workflows/deploy.yml`) builds with Vite
-  and publishes to GitHub Pages on push to `main`. Set repository secrets
-  `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` — never hardcode them.
-- **Backend:** create a Supabase cloud project (or any hosted Postgres) and
-  apply the migrations. Either `supabase db push`, or the portable one-command
-  applier:
-
-  ```bash
-  DATABASE_URL=postgres://user:pass@host:5432/db npm run deploy:migrate
-  # then seed data:
-  npm run ingest:wikidata && npm run ingest:heritage && npm run compose -- --days 14
-  ```
-- **Custom domain (later):** a coordinated change — set Vite `base` to `/`
-  (build with `BASE_PATH=/`) **and** update `SITE_URL` in `src/share.mjs`
-  together, then configure the Pages custom domain.
-
----
-
 ## Testing
 
 ```bash
-npm test                 # unit suites: normalize, transforms, composer, state, share, analytics
-npm run test:integration # RPC/RLS integration (needs a running Supabase stack; self-skips otherwise)
+npm test   # unit suites + real-Postgres (PGlite) verification of schema,
+           # SQL functions, RLS, serverless handlers, composer, and analytics
 ```

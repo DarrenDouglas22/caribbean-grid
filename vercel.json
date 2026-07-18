@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "build": {
+    "env": {
+      "BASE_PATH": "/",
+      "VITE_API_URL": "/api"
+    }
+  },
+  "functions": {
+    "api/*.js": { "maxDuration": 10 }
+  }
+}
