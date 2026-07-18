@@ -14,7 +14,8 @@
     "ingest:cpl": "node scripts/ingest/cpl.mjs",
     "ingest:heritage": "node scripts/ingest/heritage.mjs",
     "compose": "node scripts/composer/compose.mjs",
-    "deploy:migrate": "node scripts/deploy/migrate.mjs"
+    "deploy:migrate": "node scripts/deploy/migrate.mjs",
+    "deploy:bootstrap": "node scripts/deploy/bootstrap.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",

@@ -72,16 +72,16 @@ suite against real Postgres (PGlite, in-process — no Docker). Just run
 
 1. **Create a free Neon project** → copy the `DATABASE_URL` from Connection
    Details.
-2. **Set up the schema and data locally** (put `DATABASE_URL` in `.env` first):
+2. **Set up the schema and data** (put `DATABASE_URL` in `.env` first) — one
+   command chains migrate → ingest → validate → compose:
 
    ```bash
-   npm run deploy:migrate                                   # apply migrations
-   npm run ingest:wikidata && npm run ingest:heritage       # load players + eligibility
-   npm run compose -- --validate                            # expect >=30 valid grids
-   npm run compose -- --days 14 --seed 42                   # fill 2 weeks of puzzles
+   npm run deploy:bootstrap
    ```
 
-   (CPL is optional — see the runbook for the Cricsheet download.)
+   (CPL is skipped unless the Cricsheet cache is present — see the runbook. The
+   individual steps are also runnable on their own: `deploy:migrate`,
+   `ingest:wikidata`, `ingest:heritage`, `compose -- --validate`.)
 3. **Deploy to Vercel:** import the GitHub repo in Vercel and set the
    `DATABASE_URL` environment variable (the same Neon string). `vercel.json`
    already sets `VITE_API_URL=/api` and `BASE_PATH=/` for the build, and serves
