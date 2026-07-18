@@ -14,7 +14,8 @@
     "ingest:wikidata": "node scripts/ingest/wikidata.mjs",
     "ingest:cpl": "node scripts/ingest/cpl.mjs",
     "ingest:heritage": "node scripts/ingest/heritage.mjs",
-    "compose": "node scripts/composer/compose.mjs"
+    "compose": "node scripts/composer/compose.mjs",
+    "deploy:migrate": "node scripts/deploy/migrate.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",

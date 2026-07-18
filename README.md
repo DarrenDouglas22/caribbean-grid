@@ -132,8 +132,15 @@ select * from daily_funnel order by puzzle_date desc;
 - **Frontend:** GitHub Actions (`.github/workflows/deploy.yml`) builds with Vite
   and publishes to GitHub Pages on push to `main`. Set repository secrets
   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` — never hardcode them.
-- **Backend:** create a Supabase cloud project and apply the migrations
-  (`supabase db push`).
+- **Backend:** create a Supabase cloud project (or any hosted Postgres) and
+  apply the migrations. Either `supabase db push`, or the portable one-command
+  applier:
+
+  ```bash
+  DATABASE_URL=postgres://user:pass@host:5432/db npm run deploy:migrate
+  # then seed data:
+  npm run ingest:wikidata && npm run ingest:heritage && npm run compose -- --days 14
+  ```
 - **Custom domain (later):** a coordinated change — set Vite `base` to `/`
   (build with `BASE_PATH=/`) **and** update `SITE_URL` in `src/share.mjs`
   together, then configure the Pages custom domain.
