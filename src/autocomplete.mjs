@@ -3,7 +3,7 @@
 // spinner), zero matches ("No players found"), and results. Selection fires the
 // onPick callback with { playerId, displayName }.
 import { el, clear } from './dom.mjs';
-import { searchPlayers } from './api.mjs';
+import { searchPlayers } from './backend.mjs';
 
 const DEBOUNCE_MS = 200;
 

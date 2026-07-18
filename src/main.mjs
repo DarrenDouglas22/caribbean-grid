@@ -64,7 +64,10 @@ async function start() {
   const autocomplete = createAutocomplete({ onPick: submitGuess });
 
   const footer = el('div', { class: 'footer' });
-  app.append(header, counter, streakEl, grid.root, autocomplete.root, msg, footer);
+  const demoHint = isDemo
+    ? el('div', { class: 'demo-hint', text: 'Demo mode uses a small sample. Try: Chris Gayle, Patrick Ewing, Kieron Pollard, Raheem Sterling, Andrew Wiggins, Jason Holder.' })
+    : null;
+  app.append(header, counter, streakEl, grid.root, autocomplete.root, demoHint, msg, footer);
 
   restore();
   renderCounter();
