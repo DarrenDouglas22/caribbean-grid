@@ -21,6 +21,14 @@ curation work reserved for the owner (Backcourt): each entry's parentage claim
 must be checked against a citable source before it ships. Extend this file and
 verify each row, then rerun `npm run ingest:heritage`.
 
+**Curation starting point:** `heritage-candidates-wikidata.csv` holds ~13
+machine-derived candidates — athletes whose parent's birthplace Wikidata records
+inside a pool island (from a SPARQL query over parent/grandparent birthplaces).
+They are a **verification queue, not verified**: some may be birthplace-record
+gaps (a player born on the island but missing a P17 country claim) rather than
+true heritage, so each still needs the owner's check before moving into
+`heritage.csv`. Same columns, so a verified row copies straight across.
+
 ## Format
 
 `qid,espncricinfo_id,name,island,league,justification,source_url`
