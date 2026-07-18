@@ -5,11 +5,12 @@
 // read-only completed view.
 import { el, clear } from './dom.mjs';
 import { createState } from './state.mjs';
-import { getPuzzle, checkGuess, recordEvent } from './api.mjs';
+import { getPuzzle, checkGuess } from './api.mjs';
 import { createGrid } from './grid.mjs';
 import { createAutocomplete } from './autocomplete.mjs';
 import { buildShareText, copyShare } from './share.mjs';
 import { rulesModal } from './rules.mjs';
+import { createAnalytics } from './analytics.mjs';
 
 const app = document.getElementById('app');
 const state = createState();
@@ -39,7 +40,8 @@ async function start() {
 
   const puzzleDate = puzzle.puzzle_date;
   const deviceId = state.deviceId();
-  recordEvent({ deviceId, event: 'open', puzzleDate });
+  const analytics = createAnalytics({ deviceId });
+  analytics.logOpen(puzzleDate);
 
   let game = state.loadGame(puzzleDate);
 
@@ -142,7 +144,7 @@ async function start() {
     autocomplete.root.style.display = 'none';
     if (justCompleted) {
       state.recordCompletion(puzzleDate);
-      recordEvent({ deviceId, event: 'complete', puzzleDate });
+      analytics.logComplete(puzzleDate);
       renderStreak();
     }
     clear(footer);
@@ -157,7 +159,7 @@ async function start() {
           guesses: game.guesses,
         });
         await copyShare(text);
-        recordEvent({ deviceId, event: 'share', puzzleDate });
+        analytics.logShare(puzzleDate);
         setMsg('Copied — paste it anywhere.');
       },
     });
