@@ -1,0 +1,26 @@
+{
+  "name": "caribbean-grid",
+  "version": "0.1.0",
+  "description": "A daily Caribbean sports grid puzzle — islands × professional leagues.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.mjs",
+    "ingest:wikidata": "node scripts/ingest/wikidata.mjs",
+    "ingest:cpl": "node scripts/ingest/cpl.mjs",
+    "ingest:heritage": "node scripts/ingest/heritage.mjs",
+    "compose": "node scripts/composer/compose.mjs"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "vitest": "^2.1.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}

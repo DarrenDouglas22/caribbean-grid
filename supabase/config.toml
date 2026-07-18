@@ -1,0 +1,17 @@
+# Minimal Supabase local config. Run `supabase start` to boot the local stack
+# (Postgres + PostgREST) and `supabase db reset` to apply migrations.
+project_id = "caribbean-grid"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323

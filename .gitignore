@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.local
+*.local
+
+# Ingest working files (large downloads, generated reports)
+scripts/ingest/.cache/
+*.zip
+
+# OS / editor cruft
+.DS_Store
+.vscode/
+.idea/
