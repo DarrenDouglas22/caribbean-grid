@@ -8,10 +8,11 @@ content here is the curation surface.
 ## Status: candidate seed, pending owner verification
 
 The rows currently in `heritage.csv` are a small, **QID-verified candidate
-set** the agent assembled to exercise the loader and demonstrate the format.
-They are genuine heritage cases (parent/grandparent born on the island, not the
-player), each with a Wikidata QID confirmed against the entity's identity and a
-citation.
+set** (7 entries) the agent assembled to exercise the loader and demonstrate the
+format. They are genuine heritage cases (parent/grandparent born on the island,
+not the player), each with a Wikidata QID confirmed against the entity's
+identity and a citation. QIDs were verified via the Wikidata EntityData
+endpoint; parentage claims still need the owner's sign-off.
 
 **Launch gate (owner):** the plan's Definition of Done requires **≥30
 owner-verified entries**, concentrated on the otherwise-dead cells — Haiti×MLB,

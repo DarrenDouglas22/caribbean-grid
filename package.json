@@ -17,6 +17,7 @@
     "compose": "node scripts/composer/compose.mjs"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
     "vite": "^5.4.0",
     "vitest": "^2.1.0"
   },
