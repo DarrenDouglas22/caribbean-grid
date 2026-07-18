@@ -125,41 +125,69 @@ function gridKey({ islands, leagues }) {
   return `${[...islands].sort().join(',')}#${[...leagues].sort().join(',')}`;
 }
 
-// Compose `days` grids deterministically. Rotation memory forbids repeating an
-// exact grid, or reusing any (island, league) cell pair, within `window` days.
-// Returns [{ islands, leagues }] in schedule order.
+function gridCells(grid) {
+  const cells = new Set();
+  for (const island of grid.islands) for (const league of grid.leagues) cells.add(cellKey(island, league));
+  return cells;
+}
+
+// Compose `days` grids deterministically. Rotation memory has two strengths:
+//   - HARD: never repeat an exact grid within `window` days.
+//   - SOFT: minimize reuse of (island, league) cells within `window` days —
+//     freshness is a scoring preference, not a hard ban.
+// The soft cell rule matters because a hard per-cell ban is infeasible at a
+// daily cadence (9 cells/day over a 7-day window needs 63 distinct live cells,
+// which real, answer-concentrated data rarely has). Minimizing reuse keeps
+// grids feeling fresh while guaranteeing the schedule fills whenever enough
+// distinct valid grids exist. Returns [{ islands, leagues }] in schedule order.
 export function composeSchedule(view, islandCodes, leagueCodes, { days, seed = 1, window = 7, floor = 1 } = {}) {
   const rand = mulberry32(seed);
   const candidates = enumerateValidGrids(view, islandCodes, leagueCodes, { floor });
-  // Deterministic shuffle: sort by score desc, then by a seeded jitter.
-  const decorated = candidates.map((g) => ({ g, j: rand() }));
+  // Deterministic base order: score desc, then seeded jitter.
+  const decorated = candidates.map((g) => ({ g, j: rand(), cells: gridCells(g) }));
   decorated.sort((a, b) => b.g.score - a.g.score || a.j - b.j);
-  const ordered = decorated.map((d) => d.g);
 
   const schedule = [];
   const usedGridKeys = [];
-  const usedCells = []; // array of Set<cellKey> per scheduled day, windowed
+  const usedCellDays = []; // array of Set<cellKey> per scheduled day, windowed
 
   for (let day = 0; day < days; day++) {
     const windowGrids = new Set(usedGridKeys.slice(-window));
     const windowCells = new Set();
-    for (const set of usedCells.slice(-window)) for (const c of set) windowCells.add(c);
+    for (const set of usedCellDays.slice(-window)) for (const c of set) windowCells.add(c);
 
-    const pick = ordered.find((grid) => {
-      if (windowGrids.has(gridKey(grid))) return false;
-      for (const island of grid.islands) {
-        for (const league of grid.leagues) {
-          if (windowCells.has(cellKey(island, league))) return false;
+    // Adjacent-day freshness: strongly prefer a grid that shares no cell with
+    // the immediately-previous day (keeps consecutive days feeling fresh). This
+    // is satisfiable — day N+1 only needs 9 free cells — so it is a hard
+    // preference with a fallback rather than a hard ban.
+    const prevCells = usedCellDays.length ? usedCellDays[usedCellDays.length - 1] : new Set();
+
+    // Among grids not repeating an exact windowed grid, pick the one reusing the
+    // fewest windowed cells; break ties toward avoiding the previous day, then
+    // by base order (deterministic).
+    const pickBy = (avoidPrev) => {
+      let best = null;
+      let bestOverlap = Infinity;
+      for (const d of decorated) {
+        if (windowGrids.has(gridKey(d.g))) continue;
+        if (avoidPrev) {
+          let touchesPrev = false;
+          for (const c of d.cells) if (prevCells.has(c)) { touchesPrev = true; break; }
+          if (touchesPrev) continue;
         }
+        let overlap = 0;
+        for (const c of d.cells) if (windowCells.has(c)) overlap++;
+        if (overlap < bestOverlap) { best = d; bestOverlap = overlap; if (overlap === 0) break; }
       }
-      return true;
-    });
-    if (!pick) break; // ran out of non-repeating grids within the window
-    schedule.push({ islands: pick.islands, leagues: pick.leagues });
-    usedGridKeys.push(gridKey(pick));
-    const cells = new Set();
-    for (const island of pick.islands) for (const league of pick.leagues) cells.add(cellKey(island, league));
-    usedCells.push(cells);
+      return best;
+    };
+
+    const best = pickBy(true) ?? pickBy(false);
+    if (!best) break; // no non-repeating grids left at all
+
+    schedule.push({ islands: best.g.islands, leagues: best.g.leagues });
+    usedGridKeys.push(gridKey(best.g));
+    usedCellDays.push(best.cells);
   }
   return schedule;
 }

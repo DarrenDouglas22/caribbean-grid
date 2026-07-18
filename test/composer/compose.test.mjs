@@ -95,20 +95,33 @@ describe('composeSchedule', () => {
     expect(a).toEqual(b);
   });
 
-  it('never repeats an island+league cell pair within the rotation window', () => {
+  it('never repeats an exact grid within the rotation window (hard rule)', () => {
     const { view, islands, leagues } = makeView();
-    const schedule = composeSchedule(view, islands, leagues, { days: 8, seed: 7, window: 7 });
+    const schedule = composeSchedule(view, islands, leagues, { days: 14, seed: 7, window: 7 });
     const seen = [];
     for (const grid of schedule) {
-      const cells = new Set();
-      for (const island of grid.islands) for (const league of grid.leagues) cells.add(`${island}|${league}`);
-      // Compare against every prior day within the window.
-      for (const prior of seen.slice(-7)) {
-        for (const c of cells) expect(prior.has(c)).toBe(false);
-      }
-      seen.push(cells);
+      const key = `${[...grid.islands].sort().join(',')}#${[...grid.leagues].sort().join(',')}`;
+      for (const prior of seen.slice(-7)) expect(prior).not.toBe(key);
+      seen.push(key);
     }
-    expect(schedule.length).toBeGreaterThan(0);
+  });
+
+  it('fills the requested days when enough distinct valid grids exist', () => {
+    const { view, islands, leagues } = makeView();
+    const schedule = composeSchedule(view, islands, leagues, { days: 14, seed: 7 });
+    expect(schedule).toHaveLength(14);
+  });
+
+  it('minimizes cell reuse — consecutive days share no cell on a healthy pool', () => {
+    const { view, islands, leagues } = makeView();
+    const schedule = composeSchedule(view, islands, leagues, { days: 6, seed: 7 });
+    for (let i = 1; i < schedule.length; i++) {
+      const prev = new Set();
+      for (const isl of schedule[i - 1].islands) for (const lg of schedule[i - 1].leagues) prev.add(`${isl}|${lg}`);
+      for (const isl of schedule[i].islands) for (const lg of schedule[i].leagues) {
+        expect(prev.has(`${isl}|${lg}`)).toBe(false);
+      }
+    }
   });
 });
 
