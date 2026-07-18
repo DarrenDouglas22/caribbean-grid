@@ -2,7 +2,7 @@
 // record_event. The server dedupes authoritatively on (device, event,
 // puzzle_date); this adds a client-side once-per-day courtesy dedupe so a reload
 // storm doesn't hammer the RPC. No IP, no user-agent, no third-party analytics.
-import { recordEvent } from './api.mjs';
+import { recordEvent } from './backend.mjs';
 
 const LOG_PREFIX = 'cg:ev:';
 

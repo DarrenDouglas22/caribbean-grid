@@ -5,7 +5,7 @@
 // read-only completed view.
 import { el, clear } from './dom.mjs';
 import { createState } from './state.mjs';
-import { getPuzzle, checkGuess } from './api.mjs';
+import { getPuzzle, checkGuess, isDemo } from './backend.mjs';
 import { createGrid } from './grid.mjs';
 import { createAutocomplete } from './autocomplete.mjs';
 import { buildShareText, copyShare } from './share.mjs';
@@ -46,8 +46,10 @@ async function start() {
   let game = state.loadGame(puzzleDate);
 
   clear(app);
+  const title = el('h1', { text: 'Caribbean Grid' });
+  if (isDemo) title.appendChild(el('span', { class: 'demo-badge', text: 'DEMO' }));
   const header = el('header', { class: 'app-header' }, [
-    el('h1', { text: 'Caribbean Grid' }),
+    title,
     el('button', { class: 'link-btn', text: 'How to play', onclick: () => rulesModal() }),
   ]);
   const counter = el('div', { class: 'counter', role: 'status' });
